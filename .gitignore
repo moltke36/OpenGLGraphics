@@ -11,3 +11,7 @@
 .vs/
 *.tlog/
 Debug/Tmp
+!*.lib
+!*.dll
+*.iobj
+*.ipdb
