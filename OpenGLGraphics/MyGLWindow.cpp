@@ -11,12 +11,45 @@ void MyGLWindow::initializeGL()
 	{
 		+0.0f,+0.0f,
 		+1.0f,+1.0f,
+		+0.9f,+1.0f,
+
+		+0.9f,+1.0f,
+		+0.0f,+0.0f,
+		+0.0f,+0.1f,
+
+		+0.0f,+0.0f,
 		-1.0f,+1.0f,
+		-0.9f,+1.0f,
+
+		-0.9f,+1.0f,
+		+0.0f,+0.0f,
+		+0.0f,+0.1f,
+
 
 		+0.0f,+0.0f,
 		+1.0f,-1.0f,
-		-1.0f,-1.0f
+		+0.9f,-1.0f,
+
+		+0.9f,-1.0f,
+		+0.0f,+0.0f,
+		+0.0f,-0.1f,
+
+		+0.0f,+0.0f,
+		-1.0f,-1.0f,
+		-0.9f,-1.0f,
+
+		-0.9f,-1.0f,
+		+0.0f,+0.0f,
+		+0.0f,-0.1f,
 		
+
+		-1.0f,+0.9f,
+		-0.1f,+0.0f,
+		-1.0f,-0.9f,
+
+		+1.0f,+0.9f,
+		+0.1f,+0.0f,
+		+1.0f,-0.9f
 	};
 
 	// Create a BufferID
@@ -39,6 +72,6 @@ void MyGLWindow::paintGL()
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLES, 0, 40);
 	//glClear(GL_COLOR_BUFFER_BIT);
 }
