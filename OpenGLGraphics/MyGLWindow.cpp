@@ -1,4 +1,5 @@
 #include <GL\glew.h>
+#include <iostream>
 #include "MyGLWindow.h"
 
 extern const char* vertexShaderCode;
@@ -13,13 +14,13 @@ void MyGLWindow::sendDataToOpenGL()
 		+0.0f,+0.0f,
 		+1.0f, +0.0f, +0.0f,
 		+1.0f,+1.0f,
-		+1.0f, +0.0f, +0.0f,
+		+0.0f, +1.0f, +0.0f,
 		-1.0f,+1.0f,
-		+1.0f, +0.0f, +0.0f,
+		+0.0f, +0.0f, +1.0f,
 		-1.0f,-1.0f,
-		+1.0f, +0.0f, +0.0f,
+		+0.0f, +1.0f, +0.0f,
 		+1.0f,-1.0f,
-		+1.0f, +0.0f, +0.0f
+		+0.0f, +0.0f, +1.0f
 	};
 
 	// Create a BufferID
@@ -53,6 +54,36 @@ void MyGLWindow::sendDataToOpenGL()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 }
 
+bool checkStatus(GLuint objectID, PFNGLGETSHADERIVPROC objectPropertyGetter, PFNGLGETSHADERINFOLOGPROC getInfoLogFunc, GLenum statusType)
+{
+	GLint status;
+	objectPropertyGetter(objectID, statusType, &status);
+	if (status != GL_TRUE)
+	{
+		GLint infoLogLength;
+		objectPropertyGetter(objectID, statusType, &infoLogLength);
+		GLchar* buffer = new GLchar[infoLogLength];
+
+		GLsizei bufferSize;
+		getInfoLogFunc(objectID, infoLogLength, &bufferSize, buffer);
+		std::cout << buffer << std::endl;
+
+		delete[] buffer;
+		return false;
+	}
+	return true;
+}
+
+bool checkShaderStatus(GLuint shaderID)
+{
+	return checkStatus(shaderID, glGetShaderiv, glGetShaderInfoLog, GL_COMPILE_STATUS);
+}
+
+bool checkProgramStatus(GLuint programID)
+{
+	return checkStatus(programID, glGetProgramiv, glGetProgramInfoLog, GL_LINK_STATUS);
+}
+
 void installShaders()
 {
 	// Create ID for Shaders
@@ -60,7 +91,7 @@ void installShaders()
 	GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 	
 	// Create a char pointer to read the shader string
-	const char* adapter[1];
+	const GLchar* adapter[1];
 	adapter[0] = vertexShaderCode;
 	// 0 means auto calulate when the compiler see a /0 null terminator
 	glShaderSource(vertexShaderID, 1, adapter, 0);
@@ -70,13 +101,20 @@ void installShaders()
 	glCompileShader(vertexShaderID);
 	glCompileShader(fragmentShaderID);
 
+	if (! checkShaderStatus(vertexShaderID) || ! checkShaderStatus(fragmentShaderID))
+		return;
+
 	GLuint programID = glCreateProgram();
 	glAttachShader(programID, vertexShaderID);
 	glAttachShader(programID, fragmentShaderID);
 	glLinkProgram(programID);
 
+	if (!checkProgramStatus(programID))
+		return;
+
 	glUseProgram(programID);
 }
+
 
 void MyGLWindow::initializeGL()
 {
