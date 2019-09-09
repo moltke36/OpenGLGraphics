@@ -4,13 +4,13 @@
 #include <fstream>
 #include "MyGLWindow.h"
 
-const float X_DELTA = 0.1f;
+const float Y_DELTA = 0.2f;
 const uint NUM_VERTICES_PER_TRI = 3;
 const uint NUM_FLOATS_PER_VERTICE = 6;
 const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * sizeof(float);
-const uint MAX_TRIS = 20;
+const uint MAX_TRIS = 40;
 
-uint numTris = 0;
+int numTris = 0;
 
 
 
@@ -144,29 +144,60 @@ void installShaders()
 	glUseProgram(programID);
 }
 
-void sendAnotherTriToOpenGL()
+void LeftTriangleMove(int input)
 {
 	if (numTris == MAX_TRIS)
 		return;
-	const GLfloat THIS_TRI_X = -1 + numTris * X_DELTA;
-	if (THIS_TRI_X + X_DELTA == 1)
-	{
-		numTris = 0;
-	}
-		
+	const GLfloat THIS_TRI_Y = 1 - numTris * Y_DELTA;
 	GLfloat thisTri[] =
 	{
-		THIS_TRI_X, 1.0f, 0.0f,
+		-1.0, THIS_TRI_Y, 0.0f,
 		1.0f, 0.0f, 0.0f,
 
-		THIS_TRI_X + X_DELTA, 1.0f, 0.0f,
+		-0.9f, THIS_TRI_Y - Y_DELTA/2, 0.0f,
 		1.0f, 0.0f, 0.0f,
 
-		THIS_TRI_X, 0.0f, 0.0f,
+		-1.0f, THIS_TRI_Y - Y_DELTA, 0.0f,
 		1.0f, 0.0f, 0.0f
 	};
 	glBufferSubData(GL_ARRAY_BUFFER,  numTris * TRIANGLE_BYTE_SIZE, TRIANGLE_BYTE_SIZE, thisTri);
-	numTris++;
+	if (THIS_TRI_Y - Y_DELTA < -1.1 && input > 0.0)
+	{
+		input = 0;
+	}
+	else if (THIS_TRI_Y > 0.8 && input < 0.0)
+	{
+		input = 0;
+	}
+	numTris = numTris + input;
+}
+
+void RightTriangleMove(int input)
+{
+	if (numTris == MAX_TRIS)
+		return;
+	const GLfloat THIS_TRI_Y = 1 - numTris * Y_DELTA;
+	GLfloat thisTri[] =
+	{
+		1.0, THIS_TRI_Y, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		0.9f, THIS_TRI_Y - Y_DELTA / 2, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		1.0f, THIS_TRI_Y - Y_DELTA, 0.0f,
+		0.0f, 1.0f, 0.0f
+	};
+	glBufferSubData(GL_ARRAY_BUFFER, numTris * TRIANGLE_BYTE_SIZE, TRIANGLE_BYTE_SIZE, thisTri);
+	if (THIS_TRI_Y - Y_DELTA < -1.1 && input > 0.0)
+	{
+		input = 0;
+	}
+	else if (THIS_TRI_Y > 0.8 && input < 0.0)
+	{
+		input = 0;
+	}
+	numTris = numTris + input;
 }
 
 
@@ -181,6 +212,7 @@ void MyGLWindow::initializeGL()
 
 	installShaders();
 
+
 }
 
 void MyGLWindow::keyPressEvent(QKeyEvent *e)
@@ -188,10 +220,20 @@ void MyGLWindow::keyPressEvent(QKeyEvent *e)
 	switch (e->key())
 	{
 		//F1键为全屏和普通屏显示切换键
-	case Qt::Key_W:
-		sendAnotherTriToOpenGL();
-	//case Qt::Key_Escape:
-	//	close();
+	case Qt::Key_W: 
+		LeftTriangleMove(-1);
+		break;
+	case Qt::Key_S: 
+		LeftTriangleMove(1);
+		break;
+	case Qt::Key_Up:
+		RightTriangleMove(-1);
+		break;
+	case Qt::Key_Down:
+		RightTriangleMove(1);
+		break;
+	case Qt::Key_Escape:
+		close();
 	}
 }
 
