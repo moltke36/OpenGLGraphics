@@ -3,6 +3,14 @@
 #include <fstream>
 #include "MyGLWindow.h"
 
+const float X_DELTA = 0.1f;
+const uint NUM_VERTICES_PER_TRI = 3;
+const uint NUM_FLOATS_PER_VERTICE = 6;
+const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * sizeof(float);
+const uint MAX_TRIS = 20;
+
+uint numTris = 0;
+
 
 void MyGLWindow::sendDataToOpenGL()
 {
@@ -10,22 +18,22 @@ void MyGLWindow::sendDataToOpenGL()
 	const float BLUE_TRIANBLE_Z = -0.5f;
 
 	// Create verts
-	GLfloat verts[] =
-	{
-		-1.0f,-1.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-		+0.0f,+1.0f, -1.0f,
-		+1.0f, +1.0f, +1.0f,
-		+1.0f,-1.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
+	//GLfloat verts[] =
+	//{
+	//	-1.0f,-1.0f, RED_TRIANGLE_Z,
+	//	+1.0f, +0.0f, +0.0f,
+	//	+0.0f,+1.0f, -1.0f,
+	//	+1.0f, +1.0f, +1.0f,
+	//	+1.0f,-1.0f, RED_TRIANGLE_Z,
+	//	+1.0f, +0.0f, +0.0f,
 
-		-1.0f,+1.0f,BLUE_TRIANBLE_Z,
-		+0.0f, +0.0f, +1.0f,
-		+0.0f,-1.0f,BLUE_TRIANBLE_Z,
-		+0.0f, +0.0f, +1.0f,
-		+1.0f,+1.0f,BLUE_TRIANBLE_Z,
-		+0.0f, +0.0f, +1.0f
-	};
+	//	-1.0f,+1.0f,BLUE_TRIANBLE_Z,
+	//	+0.0f, +0.0f, +1.0f,
+	//	+0.0f,-1.0f,BLUE_TRIANBLE_Z,
+	//	+0.0f, +0.0f, +1.0f,
+	//	+1.0f,+1.0f,BLUE_TRIANBLE_Z,
+	//	+0.0f, +0.0f, +1.0f
+	//};
 
 	// Create a BufferID
 	GLuint vertexBufferID;
@@ -35,7 +43,7 @@ void MyGLWindow::sendDataToOpenGL()
 	//（或许可以理解成Buffer object连接上ARRAY）
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, MAX_TRIS*TRIANGLE_BYTE_SIZE, NULL, GL_STATIC_DRAW);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
 	glEnableVertexAttribArray(0);
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
@@ -134,6 +142,30 @@ void installShaders()
 	glUseProgram(programID);
 }
 
+void sendAnotherTriToOpenGL()
+{
+	if (numTris == MAX_TRIS)
+		return;
+	const GLfloat THIS_TRI_X = -1 + numTris * X_DELTA;
+	if (THIS_TRI_X + X_DELTA == 1)
+	{
+		numTris = 0;
+	}
+		
+	GLfloat thisTri[] =
+	{
+		THIS_TRI_X, 1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		THIS_TRI_X + X_DELTA, 1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		THIS_TRI_X, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f
+	};
+	glBufferSubData(GL_ARRAY_BUFFER,  numTris * TRIANGLE_BYTE_SIZE, TRIANGLE_BYTE_SIZE, thisTri);
+	numTris++;
+}
 
 void MyGLWindow::initializeGL()
 {
@@ -149,12 +181,13 @@ void MyGLWindow::initializeGL()
 
 void MyGLWindow::paintGL()
 {
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
+	sendAnotherTriToOpenGL();
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
-	//glDrawArrays(GL_TRIANGLES, 0, 40);
+	glDrawArrays(GL_TRIANGLES, (numTris-1)*NUM_VERTICES_PER_TRI, NUM_VERTICES_PER_TRI);
 	// Draw ELEMENT ARRAY
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 	//glClear(GL_COLOR_BUFFER_BIT);
 }
