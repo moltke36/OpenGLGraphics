@@ -4,7 +4,8 @@
 int main(int argc, char* argv[])
 {
 	QApplication app(argc, argv);
-	MyGLWindow mywindow;;
+	MyGLWindow mywindow;
+	mywindow.resize(640, 480);
 	mywindow.show();
 	return app.exec();
 }

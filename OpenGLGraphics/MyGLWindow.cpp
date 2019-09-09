@@ -1,5 +1,6 @@
 ﻿#include <GL\glew.h>
 #include <iostream>
+#include <Qt3DInput/qkeyevent.h>
 #include <fstream>
 #include "MyGLWindow.h"
 
@@ -10,6 +11,7 @@ const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * 
 const uint MAX_TRIS = 20;
 
 uint numTris = 0;
+
 
 
 void MyGLWindow::sendDataToOpenGL()
@@ -167,6 +169,7 @@ void sendAnotherTriToOpenGL()
 	numTris++;
 }
 
+
 void MyGLWindow::initializeGL()
 {
 	// Init glew
@@ -177,6 +180,19 @@ void MyGLWindow::initializeGL()
 	sendDataToOpenGL();
 
 	installShaders();
+
+}
+
+void MyGLWindow::keyPressEvent(QKeyEvent *e)
+{
+	switch (e->key())
+	{
+		//F1键为全屏和普通屏显示切换键
+	case Qt::Key_W:
+		sendAnotherTriToOpenGL();
+	//case Qt::Key_Escape:
+	//	close();
+	}
 }
 
 void MyGLWindow::paintGL()
@@ -184,10 +200,14 @@ void MyGLWindow::paintGL()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
-	sendAnotherTriToOpenGL();
+	
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
 	glDrawArrays(GL_TRIANGLES, (numTris-1)*NUM_VERTICES_PER_TRI, NUM_VERTICES_PER_TRI);
 	// Draw ELEMENT ARRAY
 	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-	//glClear(GL_COLOR_BUFFER_BIT);
+
+
+
+	update();
 }
+
