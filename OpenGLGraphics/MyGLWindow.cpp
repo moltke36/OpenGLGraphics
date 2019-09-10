@@ -11,8 +11,11 @@ const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * 
 const uint MAX_TRIS = 40;
 
 int numTris = 0;
+float translateLeft;
+float translateRight;
+GLuint programID;
 
-
+#pragma region OpenGL
 
 void MyGLWindow::sendDataToOpenGL()
 {
@@ -20,22 +23,22 @@ void MyGLWindow::sendDataToOpenGL()
 	const float BLUE_TRIANBLE_Z = -0.5f;
 
 	// Create verts
-	//GLfloat verts[] =
-	//{
-	//	-1.0f,-1.0f, RED_TRIANGLE_Z,
-	//	+1.0f, +0.0f, +0.0f,
-	//	+0.0f,+1.0f, -1.0f,
-	//	+1.0f, +1.0f, +1.0f,
-	//	+1.0f,-1.0f, RED_TRIANGLE_Z,
-	//	+1.0f, +0.0f, +0.0f,
+	GLfloat verts[] =
+	{
+		-1.0f, +0.1f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+		-0.9f, +0.0f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+		-1.0f, -0.1f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
 
-	//	-1.0f,+1.0f,BLUE_TRIANBLE_Z,
-	//	+0.0f, +0.0f, +1.0f,
-	//	+0.0f,-1.0f,BLUE_TRIANBLE_Z,
-	//	+0.0f, +0.0f, +1.0f,
-	//	+1.0f,+1.0f,BLUE_TRIANBLE_Z,
-	//	+0.0f, +0.0f, +1.0f
-	//};
+		+1.0f, +0.1f,BLUE_TRIANBLE_Z,
+		+0.0f, +0.0f, +1.0f,
+		+0.9f, +0.0f,BLUE_TRIANBLE_Z,
+		+0.0f, +0.0f, +1.0f,
+		+1.0f, -0.1f,BLUE_TRIANBLE_Z,
+		+0.0f, +0.0f, +1.0f
+	};
 
 	// Create a BufferID
 	GLuint vertexBufferID;
@@ -45,7 +48,7 @@ void MyGLWindow::sendDataToOpenGL()
 	//（或许可以理解成Buffer object连接上ARRAY）
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, MAX_TRIS*TRIANGLE_BYTE_SIZE, NULL, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
 	glEnableVertexAttribArray(0);
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
@@ -54,6 +57,7 @@ void MyGLWindow::sendDataToOpenGL()
 	glEnableVertexAttribArray(1);
 	// tell openGL how to interpret data
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (char*)(sizeof(float) * 3));
+
 
 	// ELEMENT ARRAY
 	// Define indices
@@ -133,7 +137,7 @@ void installShaders()
 	if (! checkShaderStatus(vertexShaderID) || ! checkShaderStatus(fragmentShaderID))
 		return;
 
-	GLuint programID = glCreateProgram();
+	programID = glCreateProgram();
 	glAttachShader(programID, vertexShaderID);
 	glAttachShader(programID, fragmentShaderID);
 	glLinkProgram(programID);
@@ -144,62 +148,65 @@ void installShaders()
 	glUseProgram(programID);
 }
 
-void LeftTriangleMove(int input)
+void MyGLWindow::paintGL()
 {
-	if (numTris == MAX_TRIS)
-		return;
-	const GLfloat THIS_TRI_Y = 1 - numTris * Y_DELTA;
-	GLfloat thisTri[] =
-	{
-		-1.0, THIS_TRI_Y, 0.0f,
-		1.0f, 0.0f, 0.0f,
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	// Set Viewport Width, Height
+	glViewport(0, 0, width(), height());
 
-		-0.9f, THIS_TRI_Y - Y_DELTA/2, 0.0f,
-		1.0f, 0.0f, 0.0f,
+	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	// Draw ELEMENT ARRAY
+	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-		-1.0f, THIS_TRI_Y - Y_DELTA, 0.0f,
-		1.0f, 0.0f, 0.0f
-	};
-	glBufferSubData(GL_ARRAY_BUFFER,  numTris * TRIANGLE_BYTE_SIZE, TRIANGLE_BYTE_SIZE, thisTri);
-	if (THIS_TRI_Y - Y_DELTA < -1.1 && input > 0.0)
-	{
-		input = 0;
-	}
-	else if (THIS_TRI_Y > 0.8 && input < 0.0)
-	{
-		input = 0;
-	}
-	numTris = numTris + input;
 }
 
-void RightTriangleMove(int input)
+#pragma endregion RenderPart
+
+#pragma region GameLoop
+
+void MyGLWindow::MoveTriangle(float left, float right)
 {
-	if (numTris == MAX_TRIS)
-		return;
-	const GLfloat THIS_TRI_Y = 1 - numTris * Y_DELTA;
-	GLfloat thisTri[] =
+	std::cout << "input" << std::endl;
+	if (programID)
 	{
-		1.0, THIS_TRI_Y, 0.0f,
-		0.0f, 1.0f, 0.0f,
+		GLint translate = glGetUniformLocation(programID, "translate");
+		if (translate != -1)
+		{
+			translateLeft += left;
+			translateRight += right;
+			float temp[2] = { translateLeft, translateRight };
+			glUniform2fv(translate, 1, temp);
 
-		0.9f, THIS_TRI_Y - Y_DELTA / 2, 0.0f,
-		0.0f, 1.0f, 0.0f,
+		}
+	}
+	else
+		std::cout << "Error: Can't find programID" << std::endl;
 
-		1.0f, THIS_TRI_Y - Y_DELTA, 0.0f,
-		0.0f, 1.0f, 0.0f
-	};
-	glBufferSubData(GL_ARRAY_BUFFER, numTris * TRIANGLE_BYTE_SIZE, TRIANGLE_BYTE_SIZE, thisTri);
-	if (THIS_TRI_Y - Y_DELTA < -1.1 && input > 0.0)
-	{
-		input = 0;
-	}
-	else if (THIS_TRI_Y > 0.8 && input < 0.0)
-	{
-		input = 0;
-	}
-	numTris = numTris + input;
+	update();
 }
 
+void MyGLWindow::keyPressEvent(QKeyEvent *e)
+{
+	switch (e->key())
+	{
+		//F1键为全屏和普通屏显示切换键
+	case Qt::Key_W:
+		MoveTriangle(-0.1, 0);
+		break;
+	case Qt::Key_S:
+		MoveTriangle(+0.1, 0);
+		break;
+	case Qt::Key_Up:
+		MoveTriangle(0.0, +0.1);
+		break;
+	case Qt::Key_Down:
+		MoveTriangle(0.0, -0.1);
+		break;
+	case Qt::Key_Escape:
+		close();
+	}
+}
 
 void MyGLWindow::initializeGL()
 {
@@ -212,44 +219,8 @@ void MyGLWindow::initializeGL()
 
 	installShaders();
 
-
+	translateLeft = 0.0;
+	translateRight = 0.0;
 }
-
-void MyGLWindow::keyPressEvent(QKeyEvent *e)
-{
-	switch (e->key())
-	{
-		//F1键为全屏和普通屏显示切换键
-	case Qt::Key_W: 
-		LeftTriangleMove(-1);
-		break;
-	case Qt::Key_S: 
-		LeftTriangleMove(1);
-		break;
-	case Qt::Key_Up:
-		RightTriangleMove(-1);
-		break;
-	case Qt::Key_Down:
-		RightTriangleMove(1);
-		break;
-	case Qt::Key_Escape:
-		close();
-	}
-}
-
-void MyGLWindow::paintGL()
-{
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	// Set Viewport Width, Height
-	glViewport(0, 0, width(), height());
-	
-	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
-	glDrawArrays(GL_TRIANGLES, (numTris-1)*NUM_VERTICES_PER_TRI, NUM_VERTICES_PER_TRI);
-	// Draw ELEMENT ARRAY
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-
-
-	update();
-}
+#pragma endregion GameLogic
 
