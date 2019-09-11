@@ -5,10 +5,11 @@ in layout(location=1) vec3 vertexColor;
 
 out vec3 theColor;
 uniform vec2 translate;
+uniform vec3 randomCol;
 
 void main()
 {
-	gl_Position = vec4(position.x, position.y + translate.x * (position.x/abs(position.x)-1.0)/2 + translate.y * (position.x/abs(position.x)+1.0)/2 ,position.z,1.0);
+	gl_Position = vec4(position.x + translate.x, position.y + translate.y, position.z,1.0);
 	//gl_Position = vec4(position,1.0);
-	theColor = vertexColor;
+	theColor = randomCol;
 }

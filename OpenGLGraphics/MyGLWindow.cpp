@@ -1,7 +1,9 @@
 ﻿#include <GL\glew.h>
 #include <iostream>
 #include <Qt3DInput/qkeyevent.h>
+#include <stdlib.h> 
 #include <fstream>
+#include <QtCore\qtimer.h>
 #include "MyGLWindow.h"
 
 const float Y_DELTA = 0.2f;
@@ -11,9 +13,20 @@ const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * 
 const uint MAX_TRIS = 40;
 
 int numTris = 0;
-float translateLeft;
-float translateRight;
+float translateLeft[2];
+float translateRight[2];
+bool endGame = false;
 GLuint programID;
+
+MyGLWindow::MyGLWindow()
+{
+	QTimer *timer = new QTimer(this);
+	connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+	timer->start(32);
+
+	setWindowTitle(tr("Move Triangles"));
+}
+
 
 #pragma region OpenGL
 
@@ -31,13 +44,6 @@ void MyGLWindow::sendDataToOpenGL()
 		+1.0f, +0.0f, +0.0f,
 		-1.0f, -0.1f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
-
-		+1.0f, +0.1f,BLUE_TRIANBLE_Z,
-		+0.0f, +0.0f, +1.0f,
-		+0.9f, +0.0f,BLUE_TRIANBLE_Z,
-		+0.0f, +0.0f, +1.0f,
-		+1.0f, -0.1f,BLUE_TRIANBLE_Z,
-		+0.0f, +0.0f, +1.0f
 	};
 
 	// Create a BufferID
@@ -151,61 +157,21 @@ void installShaders()
 void MyGLWindow::paintGL()
 {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	Update(translateLeft);
+	Draw();
+	Update(translateRight);
+	Draw();
+}
+
+void MyGLWindow::Draw()
+{
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
 
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 	// Draw ELEMENT ARRAY
 	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
-
-}
-
-#pragma endregion RenderPart
-
-#pragma region GameLoop
-
-void MyGLWindow::MoveTriangle(float left, float right)
-{
-	std::cout << "input" << std::endl;
-	if (programID)
-	{
-		GLint translate = glGetUniformLocation(programID, "translate");
-		if (translate != -1)
-		{
-			translateLeft += left;
-			translateRight += right;
-			float temp[2] = { translateLeft, translateRight };
-			glUniform2fv(translate, 1, temp);
-
-		}
-	}
-	else
-		std::cout << "Error: Can't find programID" << std::endl;
-
-	update();
-}
-
-void MyGLWindow::keyPressEvent(QKeyEvent *e)
-{
-	switch (e->key())
-	{
-		//F1键为全屏和普通屏显示切换键
-	case Qt::Key_W:
-		MoveTriangle(-0.1, 0);
-		break;
-	case Qt::Key_S:
-		MoveTriangle(+0.1, 0);
-		break;
-	case Qt::Key_Up:
-		MoveTriangle(0.0, +0.1);
-		break;
-	case Qt::Key_Down:
-		MoveTriangle(0.0, -0.1);
-		break;
-	case Qt::Key_Escape:
-		close();
-	}
 }
 
 void MyGLWindow::initializeGL()
@@ -219,8 +185,74 @@ void MyGLWindow::initializeGL()
 
 	installShaders();
 
-	translateLeft = 0.0;
-	translateRight = 0.0;
+	StartGame();
 }
+
+#pragma endregion RenderPart
+
+#pragma region GameLoop
+
+void MyGLWindow::keyPressEvent(QKeyEvent *e)
+{
+	switch (e->key())
+	{
+	case Qt::Key_W:
+		translateLeft[1] += +0.1;
+		break;
+	case Qt::Key_S:
+		translateLeft[1] += -0.1;
+		break;
+	case Qt::Key_A:
+		translateLeft[0] += -0.1;
+		break;
+	case Qt::Key_D:
+		translateLeft[0] += +0.1;
+		break;
+	case Qt::Key_Up:
+		translateRight[1] += +0.1;
+		break;
+	case Qt::Key_Down:
+		translateRight[1] += -0.1;
+		break;
+	case Qt::Key_Left:
+		translateRight[0] += -0.1;
+		break;
+	case Qt::Key_Right:
+		translateRight[0] += +0.1;
+		break;
+	case Qt::Key_Escape:
+		close();
+	}
+}
+
+void MyGLWindow::StartGame()
+{
+	translateLeft[0] = 0.0;
+	translateLeft[1] = 0.0;
+	translateRight[0] = 0.0;
+	translateRight[1] = 0.0;
+}
+
+void MyGLWindow::Update(float TriTranslate[2])
+{
+	if (programID)
+	{
+		GLint translate = glGetUniformLocation(programID, "translate");
+		if (translate != -1)
+		{
+			glUniform2fv(translate, 1, TriTranslate);
+		}
+		GLint randomCol = glGetUniformLocation(programID, "randomCol");
+		if (randomCol != -1)
+		{
+
+			float color[3] = { (double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX)};
+			glUniform3fv(randomCol, 1, color);
+		}
+	}
+	else
+		std::cout << "Error: Can't find programID" << std::endl;
+}
+
 #pragma endregion GameLogic
 

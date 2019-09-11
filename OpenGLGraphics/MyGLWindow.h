@@ -4,13 +4,16 @@
 class MyGLWindow : public QGLWidget
 {
 protected:
+	
 	void sendDataToOpenGL();
-	void MoveTriangle(float left, float right);
 	void initializeGL();
+	void StartGame();
 	void keyPressEvent(QKeyEvent * e);
 	void paintGL();
-
+	void Draw();
 public:
-
+	MyGLWindow();
+	void Update(float TriTranslate[2]);
+	
 };
 
