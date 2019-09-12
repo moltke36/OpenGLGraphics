@@ -15,6 +15,8 @@ const uint MAX_TRIS = 40;
 int numTris = 0;
 float translateLeft[2];
 float translateRight[2];
+float leftcolor[3];
+float rightcolor[3];
 bool endGame = false;
 GLuint programID;
 
@@ -157,9 +159,9 @@ void installShaders()
 void MyGLWindow::paintGL()
 {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	Update(translateLeft);
+	Update(translateLeft,leftcolor);
 	Draw();
-	Update(translateRight);
+	Update(translateRight,rightcolor);
 	Draw();
 }
 
@@ -197,32 +199,47 @@ void MyGLWindow::keyPressEvent(QKeyEvent *e)
 	switch (e->key())
 	{
 	case Qt::Key_W:
-		translateLeft[1] += +0.1;
+		translateLeft[1] += +0.1f;
+		randomColor(leftcolor);
 		break;
 	case Qt::Key_S:
-		translateLeft[1] += -0.1;
+		translateLeft[1] += -0.1f;
+		randomColor(leftcolor);
 		break;
 	case Qt::Key_A:
-		translateLeft[0] += -0.1;
+		translateLeft[0] += -0.1f;
+		randomColor(leftcolor);
 		break;
 	case Qt::Key_D:
-		translateLeft[0] += +0.1;
+		translateLeft[0] += +0.1f;
+		randomColor(leftcolor);
 		break;
 	case Qt::Key_Up:
-		translateRight[1] += +0.1;
+		translateRight[1] += +0.1f;
+		randomColor(rightcolor);
 		break;
 	case Qt::Key_Down:
-		translateRight[1] += -0.1;
+		translateRight[1] += -0.1f;
+		randomColor(rightcolor);
 		break;
 	case Qt::Key_Left:
-		translateRight[0] += -0.1;
+		translateRight[0] += -0.1f;
+		randomColor(rightcolor);
 		break;
 	case Qt::Key_Right:
-		translateRight[0] += +0.1;
+		translateRight[0] += +0.1f;
+		randomColor(rightcolor);
 		break;
 	case Qt::Key_Escape:
 		close();
 	}
+}
+
+void MyGLWindow::randomColor(float* Inputcolor)
+{
+	Inputcolor[0] = (double)rand() / (RAND_MAX);
+	Inputcolor[1] = (double)rand() / (RAND_MAX);
+	Inputcolor[2] = (double)rand() / (RAND_MAX);
 }
 
 void MyGLWindow::StartGame()
@@ -231,9 +248,17 @@ void MyGLWindow::StartGame()
 	translateLeft[1] = 0.0;
 	translateRight[0] = 0.0;
 	translateRight[1] = 0.0;
+
+	leftcolor[0] = 1.0;
+	leftcolor[1] = 1.0;
+	leftcolor[2] = 1.0;
+
+	rightcolor[0] = 1.0;
+	rightcolor[1] = 1.0;
+	rightcolor[2] = 1.0;
 }
 
-void MyGLWindow::Update(float TriTranslate[2])
+void MyGLWindow::Update(float TriTranslate[2], float randcolor[3])
 {
 	if (programID)
 	{
@@ -245,9 +270,8 @@ void MyGLWindow::Update(float TriTranslate[2])
 		GLint randomCol = glGetUniformLocation(programID, "randomCol");
 		if (randomCol != -1)
 		{
-
 			float color[3] = { (double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX)};
-			glUniform3fv(randomCol, 1, color);
+			glUniform3fv(randomCol, 1, randcolor);
 		}
 	}
 	else
