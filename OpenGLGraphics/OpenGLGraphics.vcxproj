@@ -94,6 +94,17 @@
       <AdditionalLibraryDirectories>$(ProjectDir)..\Middleware\Qt\lib\Debug\Win32;$(ProjectDir)..\Middleware\glew\lib\Debug\Win32</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glew32d.lib;Qt5Widgetsd.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5OpenGLd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)VertexShaderCode.glsl $(targetDir) /Y
+xcopy $(ProjectDir)FragmentShaderCode.glsl $(targetDir) /Y
+xcopy $(ProjectDir)..\Middleware\Qt\bin\Debug\Win32\Qt5Cored.dll $(targetDir) /Y
+xcopy $(ProjectDir)..\Middleware\Qt\bin\Debug\Win32\Qt5Guid.dll $(targetDir) /Y
+xcopy $(ProjectDir)..\Middleware\Qt\bin\Debug\Win32\Qt5OpenGLd.dll $(targetDir) /Y
+xcopy $(ProjectDir)..\Middleware\Qt\bin\Debug\Win32\Qt5Widgetsd.dll $(targetDir) /Y
+xcopy $(ProjectDir)..\Middleware\Qt\bin\Debug\Win32\platforms\qwindowsd.dll $(targetDir)platforms\ /Y
+xcopy $(ProjectDir)..\Middleware\glew\bin\Debug\Win32\glew32d.dll $(targetDir) /Y
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
