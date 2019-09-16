@@ -5,11 +5,13 @@
 #include <fstream>
 #include <QtCore\qtimer.h>
 #include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
 #include <Vertex.h>
 #include <ShapeGenerator.h>
 #include <stdio.h>
 #include "MyGLWindow.h"
 using glm::vec3;
+using glm::mat4;
 
 
 const float Y_DELTA = 0.2f;
@@ -42,13 +44,7 @@ MyGLWindow::MyGLWindow()
 
 void MyGLWindow::sendDataToOpenGL()
 {
-	ShapeData tri = ShapeGenerator::makeTriangle();
-	printf("Tri Pos: %f,%f,%f \n", tri.vertices[0].position.x, tri.vertices[0].position.y, tri.vertices[0].position.z);
-	printf("Tri Pos: %f,%f,%f \n", tri.vertices[1].position.x, tri.vertices[1].position.y, tri.vertices[1].position.z);
-	printf("Tri Pos: %f,%f,%f \n", tri.vertices[2].position.x, tri.vertices[2].position.y, tri.vertices[2].position.z);
-	printf("Tri Indices: %d \n", tri.indices[0]);
-	printf("Tri Indices: %d \n", tri.indices[1]);
-	printf("Tri Indices: %d \n", tri.indices[2]);
+	ShapeData shape = ShapeGenerator::makeCube();
 
 	// Create a BufferID
 	GLuint vertexBufferID;
@@ -58,7 +54,7 @@ void MyGLWindow::sendDataToOpenGL()
 	//（或许可以理解成Buffer object连接上ARRAY）
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, tri.vertexBufferSize(), tri.vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, shape.vertexBufferSize(), shape.vertices, GL_STATIC_DRAW);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
 	glEnableVertexAttribArray(0);
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
@@ -79,9 +75,9 @@ void MyGLWindow::sendDataToOpenGL()
 	// Bind to ELEMENT ARRAY BUFFER
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 	// Pass data to ELEMENT ARRAY
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, tri.indexBufferSize(), tri.indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, shape.indexBufferSize(), shape.indices, GL_STATIC_DRAW);
 
-	tri.cleanup();
+	shape.cleanup();
 }
 
 bool checkStatus(GLuint objectID, PFNGLGETSHADERIVPROC objectPropertyGetter, PFNGLGETSHADERINFOLOGPROC getInfoLogFunc, GLenum statusType)
