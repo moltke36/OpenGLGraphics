@@ -4,7 +4,13 @@
 #include <stdlib.h> 
 #include <fstream>
 #include <QtCore\qtimer.h>
+#include <glm.hpp>
+#include <Vertex.h>
+#include <ShapeGenerator.h>
+#include <stdio.h>
 #include "MyGLWindow.h"
+using glm::vec3;
+
 
 const float Y_DELTA = 0.2f;
 const uint NUM_VERTICES_PER_TRI = 3;
@@ -32,21 +38,17 @@ MyGLWindow::MyGLWindow()
 
 #pragma region OpenGL
 
+
+
 void MyGLWindow::sendDataToOpenGL()
 {
-	const float RED_TRIANGLE_Z = 0.5f;
-	const float BLUE_TRIANBLE_Z = -0.5f;
-
-	// Create verts
-	GLfloat verts[] =
-	{
-		-1.0f, +0.1f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-		-0.9f, +0.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-		-1.0f, -0.1f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-	};
+	ShapeData tri = ShapeGenerator::makeTriangle();
+	printf("Tri Pos: %f,%f,%f \n", tri.vertices[0].position.x, tri.vertices[0].position.y, tri.vertices[0].position.z);
+	printf("Tri Pos: %f,%f,%f \n", tri.vertices[1].position.x, tri.vertices[1].position.y, tri.vertices[1].position.z);
+	printf("Tri Pos: %f,%f,%f \n", tri.vertices[2].position.x, tri.vertices[2].position.y, tri.vertices[2].position.z);
+	printf("Tri Indices: %d \n", tri.indices[0]);
+	printf("Tri Indices: %d \n", tri.indices[1]);
+	printf("Tri Indices: %d \n", tri.indices[2]);
 
 	// Create a BufferID
 	GLuint vertexBufferID;
@@ -56,7 +58,7 @@ void MyGLWindow::sendDataToOpenGL()
 	//（或许可以理解成Buffer object连接上ARRAY）
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, tri.vertexBufferSize(), tri.vertices, GL_STATIC_DRAW);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
 	glEnableVertexAttribArray(0);
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
@@ -69,7 +71,7 @@ void MyGLWindow::sendDataToOpenGL()
 
 	// ELEMENT ARRAY
 	// Define indices
-	GLushort indices[] = { 0,1,2,3,4,5 };
+	//GLushort indices[] = { 0,1,2,3,4,5 };
 	// Create a index buffer ID
 	GLuint indexBufferID;
 	// Create a index buffer
@@ -77,7 +79,9 @@ void MyGLWindow::sendDataToOpenGL()
 	// Bind to ELEMENT ARRAY BUFFER
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 	// Pass data to ELEMENT ARRAY
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, tri.indexBufferSize(), tri.indices, GL_STATIC_DRAW);
+
+	tri.cleanup();
 }
 
 bool checkStatus(GLuint objectID, PFNGLGETSHADERIVPROC objectPropertyGetter, PFNGLGETSHADERINFOLOGPROC getInfoLogFunc, GLenum statusType)
@@ -161,8 +165,8 @@ void MyGLWindow::paintGL()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	Update(translateLeft,leftcolor);
 	Draw();
-	Update(translateRight,rightcolor);
-	Draw();
+	//Update(translateRight,rightcolor);
+	//Draw();
 }
 
 void MyGLWindow::Draw()
@@ -171,9 +175,9 @@ void MyGLWindow::Draw()
 	glViewport(0, 0, width(), height());
 
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 	// Draw ELEMENT ARRAY
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, 0);
 }
 
 void MyGLWindow::initializeGL()
@@ -270,7 +274,7 @@ void MyGLWindow::Update(float TriTranslate[2], float randcolor[3])
 		GLint randomCol = glGetUniformLocation(programID, "randomCol");
 		if (randomCol != -1)
 		{
-			float color[3] = { (double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX)};
+			float color[3] = { (float)rand() / (RAND_MAX),(float)rand() / (RAND_MAX),(float)rand() / (RAND_MAX)};
 			glUniform3fv(randomCol, 1, randcolor);
 		}
 	}

@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Primitives">
+      <UniqueIdentifier>{d2b10372-5829-43fe-9c4e-81b18b96599a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Mainer.cpp">
@@ -21,9 +24,21 @@
     <ClCompile Include="MyGLWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ShapeGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyGLWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeData.h">
+      <Filter>Primitives</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
