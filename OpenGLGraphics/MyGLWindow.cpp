@@ -27,6 +27,7 @@ float leftcolor[3];
 float rightcolor[3];
 bool endGame = false;
 GLuint programID;
+GLuint numIndices;
 
 MyGLWindow::MyGLWindow()
 {
@@ -37,6 +38,11 @@ MyGLWindow::MyGLWindow()
 	setWindowTitle(tr("Move Triangles"));
 }
 
+MyGLWindow::~MyGLWindow()
+{
+	glUseProgram(0);
+	glDeleteProgram(programID);
+}
 
 #pragma region OpenGL
 
@@ -76,7 +82,7 @@ void MyGLWindow::sendDataToOpenGL()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 	// Pass data to ELEMENT ARRAY
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, shape.indexBufferSize(), shape.indices, GL_STATIC_DRAW);
-
+	numIndices = shape.numIndices;
 	shape.cleanup();
 }
 
@@ -150,6 +156,11 @@ void installShaders()
 	glAttachShader(programID, fragmentShaderID);
 	glLinkProgram(programID);
 
+	// Since it's attached, we no longer need shader code in our memory.
+	glDeleteShader(vertexShaderID);
+	glDeleteShader(fragmentShaderID);
+
+
 	if (!checkProgramStatus(programID))
 		return;
 
@@ -170,10 +181,25 @@ void MyGLWindow::Draw()
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
 
+	// Projection Matrix （笔记PMatrix 物体压扁）
+	mat4 projectionMatrix = glm::perspective(30.0f, ((float)width()) / height(), 0.1f, 10.0f);
+	// Model到World Matrix
+	mat4 translationMatrix = glm::translate(projectionMatrix, vec3(0.0f, 0.0f, -3.0f));
+	// Model到World Matrix 
+	mat4 rotationMatrix = glm::rotate(translationMatrix, 45.0f + translateLeft[0], vec3(0.0f, 1.0f, 0.0f));
+
+
+	mat4 fullTransformMatrix = rotationMatrix;
+
+	GLint fullTransformMatrixUniformLocation =
+		glGetUniformLocation(programID, "fullTransformMatrix"); 
+
+	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
 	// Draw ELEMENT ARRAY
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, 0);
 }
 
 void MyGLWindow::initializeGL()

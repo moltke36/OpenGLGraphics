@@ -14,6 +14,7 @@ protected:
 	void Draw();
 public:
 	MyGLWindow();
+	~MyGLWindow();
 	void Update(float TriTranslate[2], float randcolor[3]);
 	
 };
