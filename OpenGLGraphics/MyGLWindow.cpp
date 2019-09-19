@@ -6,6 +6,7 @@
 #include <QtCore\qtimer.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
+#include <gtx/transform.hpp>
 #include <Vertex.h>
 #include <ShapeGenerator.h>
 #include <stdio.h>
@@ -181,15 +182,18 @@ void MyGLWindow::Draw()
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
 
+	mat4 fullTransformMatrix;
+
 	// Projection Matrix （笔记PMatrix 物体压扁）
 	mat4 projectionMatrix = glm::perspective(30.0f, ((float)width()) / height(), 0.1f, 10.0f);
+
+	// Cube 1:
 	// Model到World Matrix
-	mat4 translationMatrix = glm::translate(projectionMatrix, vec3(0.0f, 0.0f, -3.0f));
+	mat4 translationMatrix = glm::translate(vec3(-1.0f, 0.0f, -3.0f));
 	// Model到World Matrix 
-	mat4 rotationMatrix = glm::rotate(translationMatrix, 45.0f + translateLeft[0], vec3(0.0f, 1.0f, 0.0f));
+	mat4 rotationMatrix = glm::rotate(36.0f + translateLeft[0], vec3(1.0f, 0.0f, 0.0f));
 
-
-	mat4 fullTransformMatrix = rotationMatrix;
+	fullTransformMatrix = projectionMatrix * translationMatrix * rotationMatrix;
 
 	GLint fullTransformMatrixUniformLocation =
 		glGetUniformLocation(programID, "fullTransformMatrix"); 
@@ -198,6 +202,19 @@ void MyGLWindow::Draw()
 
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
+	// Draw ELEMENT ARRAY
+	glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, 0);
+
+	// Cube 2:
+	// Model到World Matrix
+	translationMatrix = glm::translate(vec3(1.0f, 0.0f, -3.75f));
+	// Model到World Matrix 
+	rotationMatrix = glm::rotate(126.0f + translateLeft[0], vec3(0.0f, 1.0f, 0.0f));
+
+	fullTransformMatrix = projectionMatrix * translationMatrix * rotationMatrix;
+
+	glUniformMatrix4fv(fullTransformMatrixUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+
 	// Draw ELEMENT ARRAY
 	glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, 0);
 }
