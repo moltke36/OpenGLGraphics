@@ -10,7 +10,7 @@
 *.idb
 .vs/
 *.tlog/
-Debug/Tmp
+Debug/
 !*.lib
 !*.dll
 *.iobj
