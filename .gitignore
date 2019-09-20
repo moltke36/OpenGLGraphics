@@ -15,3 +15,4 @@ Debug/
 !*.dll
 *.iobj
 *.ipdb
+x64/
