@@ -38,14 +38,43 @@ void MyGLWindow::sendDataToOpenGL()
 	const float BLUE_TRIANBLE_Z = -0.5f;
 
 	// Create verts
-	GLfloat verts[] =
+	GLfloat Arena[] =
 	{
-		-1.0f, +0.1f, RED_TRIANGLE_Z,
+		+0.0f, +1.0f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
-		-0.9f, +0.0f, RED_TRIANGLE_Z,
+		-1.0f, +0.0f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
-		-1.0f, -0.1f, RED_TRIANGLE_Z,
+		+0.0f, -1.0f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
+		+1.0f, +0.0f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+	};
+
+	GLfloat Cross[] =
+	{
+		-0.0025f, +0.005f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		+0.0025f, +0.005f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		-0.0025f, -0.05f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		+0.0025f, -0.05f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		-0.05f, +0.0025f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		-0.05f, -0.0025f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		+0.05f, +0.0025f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f,
+
+		+0.05f, -0.0025f, RED_TRIANGLE_Z,
+		+1.0f, +0.0f, +0.0f
 	};
 
 	// Create a BufferID
@@ -56,7 +85,9 @@ void MyGLWindow::sendDataToOpenGL()
 	//（或许可以理解成Buffer object连接上ARRAY）
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,10000, NULL, GL_STATIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Arena), &Arena);
+	glBufferSubData(GL_ARRAY_BUFFER, sizeof(Arena), sizeof(Cross), &Cross);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
 	glEnableVertexAttribArray(0);
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
@@ -69,7 +100,7 @@ void MyGLWindow::sendDataToOpenGL()
 
 	// ELEMENT ARRAY
 	// Define indices
-	GLushort indices[] = { 0,1,2,3,4,5 };
+	GLushort indices[] = { 0,1,1,2,2,3,3,0, 4,5,6, 5,6,7, 8,9,10, 9,10,11};
 	// Create a index buffer ID
 	GLuint indexBufferID;
 	// Create a index buffer
@@ -161,8 +192,6 @@ void MyGLWindow::paintGL()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	Update(translateLeft,leftcolor);
 	Draw();
-	Update(translateRight,rightcolor);
-	Draw();
 }
 
 void MyGLWindow::Draw()
@@ -171,9 +200,11 @@ void MyGLWindow::Draw()
 	glViewport(0, 0, width(), height());
 
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glDrawArrays(GL_LINES, 0, 4);
+	//glDrawArrays(GL_TRIANGLES, 0, 12);
 	// Draw ELEMENT ARRAY
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_LINES, 8, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_SHORT,(void*)(8*sizeof(GLushort)));
 }
 
 void MyGLWindow::initializeGL()
