@@ -11,10 +11,11 @@ protected:
 	void keyPressEvent(QKeyEvent * e);
 	void randomColor(float * color);
 	void paintGL();
-	void Draw();
+	void DrawDynamic();
+	void DrawStaic();
 public:
 	MyGLWindow();
-	void Update(float TriTranslate[2], float randcolor[3]);
+	void UpdateUniform(float TriTranslate[2], float randcolor[3]);
 	
 };
 

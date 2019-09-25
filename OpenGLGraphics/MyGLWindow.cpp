@@ -1,30 +1,30 @@
 ﻿#include <GL\glew.h>
 #include <iostream>
 #include <Qt3DInput/qkeyevent.h>
+#include <QtCore/qelapsedtimer.h>
 #include <stdlib.h> 
 #include <fstream>
 #include <QtCore\qtimer.h>
 #include "MyGLWindow.h"
 
-const float Y_DELTA = 0.2f;
-const uint NUM_VERTICES_PER_TRI = 3;
-const uint NUM_FLOATS_PER_VERTICE = 6;
-const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * sizeof(float);
-const uint MAX_TRIS = 40;
-
 int numTris = 0;
-float translateLeft[2];
-float translateRight[2];
-float leftcolor[3];
-float rightcolor[3];
+float translate[2];
+float staticPos[2];
+float color[3];
+float arenaColor[3];
 bool endGame = false;
+float velocity[2];
+int oldTime;
+QElapsedTimer elapsedTimer;
 GLuint programID;
 
 MyGLWindow::MyGLWindow()
 {
+	elapsedTimer = QElapsedTimer();
+	elapsedTimer.start();
 	QTimer *timer = new QTimer(this);
 	connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-	timer->start(32);
+	timer->start(15);
 
 	setWindowTitle(tr("Move Triangles"));
 }
@@ -52,28 +52,28 @@ void MyGLWindow::sendDataToOpenGL()
 
 	GLfloat Cross[] =
 	{
-		-0.0025f, +0.005f, RED_TRIANGLE_Z,
+		-0.005f, +0.015f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		+0.0025f, +0.005f, RED_TRIANGLE_Z,
+		+0.005f, +0.015f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		-0.0025f, -0.05f, RED_TRIANGLE_Z,
+		-0.005f, -0.015f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		+0.0025f, -0.05f, RED_TRIANGLE_Z,
+		+0.005f, -0.015f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		-0.05f, +0.0025f, RED_TRIANGLE_Z,
+		-0.015f, +0.005f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		-0.05f, -0.0025f, RED_TRIANGLE_Z,
+		-0.015f, -0.005f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		+0.05f, +0.0025f, RED_TRIANGLE_Z,
+		+0.015f, +0.005f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f,
 
-		+0.05f, -0.0025f, RED_TRIANGLE_Z,
+		+0.015f, -0.005f, RED_TRIANGLE_Z,
 		+1.0f, +0.0f, +0.0f
 	};
 
@@ -189,22 +189,30 @@ void installShaders()
 
 void MyGLWindow::paintGL()
 {
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	Update(translateLeft,leftcolor);
-	Draw();
-}
-
-void MyGLWindow::Draw()
-{
 	// Set Viewport Width, Height
 	glViewport(0, 0, width(), height());
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	DrawStaic();
+	DrawDynamic();
+}
 
+void MyGLWindow::DrawDynamic()
+{
+	
+	translate[0] += (velocity[0] / 5.0f) * ((float)(elapsedTimer.elapsed() - oldTime) / 1000.f);
+	translate[1] += (velocity[1] / 5.0f) * ((float)(elapsedTimer.elapsed() - oldTime) / 1000.f);
+
+	UpdateUniform(translate, color);
+	// Draw ELEMENT ARRAY
+	glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_SHORT,(void*)(8*sizeof(GLushort)));
+	oldTime = elapsedTimer.elapsed();
+}
+void MyGLWindow::DrawStaic()
+{
 	// 开始绘制（绘制类型，第一个数据，多少个vertex渲染）
 	//glDrawArrays(GL_LINES, 0, 4);
-	//glDrawArrays(GL_TRIANGLES, 0, 12);
-	// Draw ELEMENT ARRAY
+	UpdateUniform(staticPos, arenaColor);
 	glDrawElements(GL_LINES, 8, GL_UNSIGNED_SHORT, 0);
-	glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_SHORT,(void*)(8*sizeof(GLushort)));
 }
 
 void MyGLWindow::initializeGL()
@@ -230,36 +238,35 @@ void MyGLWindow::keyPressEvent(QKeyEvent *e)
 	switch (e->key())
 	{
 	case Qt::Key_W:
-		translateLeft[1] += +0.1f;
-		randomColor(leftcolor);
+		StartGame();
 		break;
 	case Qt::Key_S:
-		translateLeft[1] += -0.1f;
-		randomColor(leftcolor);
+		translate[1] += -0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_A:
-		translateLeft[0] += -0.1f;
-		randomColor(leftcolor);
+		translate[0] += -0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_D:
-		translateLeft[0] += +0.1f;
-		randomColor(leftcolor);
+		translate[0] += +0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_Up:
-		translateRight[1] += +0.1f;
-		randomColor(rightcolor);
+		translate[1] += +0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_Down:
-		translateRight[1] += -0.1f;
-		randomColor(rightcolor);
+		translate[1] += -0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_Left:
-		translateRight[0] += -0.1f;
-		randomColor(rightcolor);
+		translate[0] += -0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_Right:
-		translateRight[0] += +0.1f;
-		randomColor(rightcolor);
+		translate[0] += +0.1f;
+		randomColor(color);
 		break;
 	case Qt::Key_Escape:
 		close();
@@ -275,34 +282,36 @@ void MyGLWindow::randomColor(float* Inputcolor)
 
 void MyGLWindow::StartGame()
 {
-	translateLeft[0] = 0.0;
-	translateLeft[1] = 0.0;
-	translateRight[0] = 0.0;
-	translateRight[1] = 0.0;
+	translate[0] = 0.0;
+	translate[1] = 0.0;
 
-	leftcolor[0] = 1.0;
-	leftcolor[1] = 1.0;
-	leftcolor[2] = 1.0;
+	staticPos[0] = 0.0;
+	staticPos[1] = 0.0;
 
-	rightcolor[0] = 1.0;
-	rightcolor[1] = 1.0;
-	rightcolor[2] = 1.0;
+ 	velocity[0] = ((double)rand() / (RAND_MAX) * 2 - 1);
+	velocity[1] = ((double)rand() / (RAND_MAX) * 2 - 1);
+
+	printf("%f Veclocity: %f,%f \n", (float)(elapsedTimer.elapsed() - oldTime) / 1000.f,velocity[0], velocity[1]);
+	randomColor(color);
+	arenaColor[0] = 1.0;
+	arenaColor[1] = 1.0;
+	arenaColor[2] = 1.0;
 }
 
-void MyGLWindow::Update(float TriTranslate[2], float randcolor[3])
+void MyGLWindow::UpdateUniform(float TriTranslate[2], float randcolor[3])
 {
 	if (programID)
 	{
-		GLint translate = glGetUniformLocation(programID, "translate");
-		if (translate != -1)
+		GLint translateID = glGetUniformLocation(programID, "translate");
+		if (translateID != -1)
 		{
-			glUniform2fv(translate, 1, TriTranslate);
+			glUniform2fv(translateID, 1, TriTranslate);
 		}
-		GLint randomCol = glGetUniformLocation(programID, "randomCol");
-		if (randomCol != -1)
+		GLint randomColID = glGetUniformLocation(programID, "randomCol");
+		if (randomColID != -1)
 		{
 			float color[3] = { (double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX),(double)rand() / (RAND_MAX)};
-			glUniform3fv(randomCol, 1, randcolor);
+			glUniform3fv(randomColID, 1, randcolor);
 		}
 	}
 	else
