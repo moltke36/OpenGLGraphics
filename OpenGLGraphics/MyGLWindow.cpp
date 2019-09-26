@@ -4,19 +4,34 @@
 #include <QtCore/qelapsedtimer.h>
 #include <stdlib.h> 
 #include <fstream>
+#include <gtx\perpendicular.hpp>
 #include <QtCore\qtimer.h>
 #include "MyGLWindow.h"
 
+using glm::vec2;
+
 int numTris = 0;
-float translate[2];
-float staticPos[2];
+vec2 translate;
+vec2 staticPos;
 float color[3];
 float arenaColor[3];
 bool endGame = false;
-float velocity[2];
+vec2 velocity;
 int oldTime;
 QElapsedTimer elapsedTimer;
 GLuint programID;
+// Create verts
+GLfloat Arena[] =
+{
+	+0.0f, +1.0f, 0.0,
+	+1.0f, +0.0f, +0.0f,
+	-1.0f, +0.0f, 0.0,
+	+1.0f, +0.0f, +0.0f,
+	+0.0f, -1.0f, 0.0,
+	+1.0f, +0.0f, +0.0f,
+	+1.0f, +0.0f, 0.0,
+	+1.0f, +0.0f, +0.0f,
+};
 
 MyGLWindow::MyGLWindow()
 {
@@ -36,19 +51,6 @@ void MyGLWindow::sendDataToOpenGL()
 {
 	const float RED_TRIANGLE_Z = 0.5f;
 	const float BLUE_TRIANBLE_Z = -0.5f;
-
-	// Create verts
-	GLfloat Arena[] =
-	{
-		+0.0f, +1.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-		-1.0f, +0.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-		+0.0f, -1.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-		+1.0f, +0.0f, RED_TRIANGLE_Z,
-		+1.0f, +0.0f, +0.0f,
-	};
 
 	GLfloat Cross[] =
 	{
@@ -194,13 +196,13 @@ void MyGLWindow::paintGL()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	DrawStaic();
 	DrawDynamic();
+	DetectCollision();
 }
 
 void MyGLWindow::DrawDynamic()
 {
 	
-	translate[0] += (velocity[0] / 5.0f) * ((float)(elapsedTimer.elapsed() - oldTime) / 1000.f);
-	translate[1] += (velocity[1] / 5.0f) * ((float)(elapsedTimer.elapsed() - oldTime) / 1000.f);
+	translate += (velocity / 5.0f) * ((float)(elapsedTimer.elapsed() - oldTime) / 1000.f);
 
 	UpdateUniform(translate, color);
 	// Draw ELEMENT ARRAY
@@ -241,32 +243,7 @@ void MyGLWindow::keyPressEvent(QKeyEvent *e)
 		StartGame();
 		break;
 	case Qt::Key_S:
-		translate[1] += -0.1f;
-		randomColor(color);
-		break;
-	case Qt::Key_A:
-		translate[0] += -0.1f;
-		randomColor(color);
-		break;
-	case Qt::Key_D:
-		translate[0] += +0.1f;
-		randomColor(color);
-		break;
-	case Qt::Key_Up:
-		translate[1] += +0.1f;
-		randomColor(color);
-		break;
-	case Qt::Key_Down:
-		translate[1] += -0.1f;
-		randomColor(color);
-		break;
-	case Qt::Key_Left:
-		translate[0] += -0.1f;
-		randomColor(color);
-		break;
-	case Qt::Key_Right:
-		translate[0] += +0.1f;
-		randomColor(color);
+		DetectCollision();
 		break;
 	case Qt::Key_Escape:
 		close();
@@ -282,14 +259,13 @@ void MyGLWindow::randomColor(float* Inputcolor)
 
 void MyGLWindow::StartGame()
 {
-	translate[0] = 0.0;
-	translate[1] = 0.0;
+	translate = { 0.0,0.0 };
 
-	staticPos[0] = 0.0;
-	staticPos[1] = 0.0;
+	staticPos = vec2(0.0);
 
- 	velocity[0] = ((double)rand() / (RAND_MAX) * 2 - 1);
-	velocity[1] = ((double)rand() / (RAND_MAX) * 2 - 1);
+ 	velocity.x = ((float)rand() / (RAND_MAX) * 2 - 1);
+	velocity.y = ((float)rand() / (RAND_MAX) * 2 - 1);
+	glm::normalize(velocity);
 
 	printf("%f Veclocity: %f,%f \n", (float)(elapsedTimer.elapsed() - oldTime) / 1000.f,velocity[0], velocity[1]);
 	randomColor(color);
@@ -298,14 +274,14 @@ void MyGLWindow::StartGame()
 	arenaColor[2] = 1.0;
 }
 
-void MyGLWindow::UpdateUniform(float TriTranslate[2], float randcolor[3])
+void MyGLWindow::UpdateUniform(vec2 TriTranslate, float randcolor[3])
 {
 	if (programID)
 	{
 		GLint translateID = glGetUniformLocation(programID, "translate");
 		if (translateID != -1)
 		{
-			glUniform2fv(translateID, 1, TriTranslate);
+			glUniform2fv(translateID, 1, &TriTranslate[0]);
 		}
 		GLint randomColID = glGetUniformLocation(programID, "randomCol");
 		if (randomColID != -1)
@@ -316,6 +292,26 @@ void MyGLWindow::UpdateUniform(float TriTranslate[2], float randcolor[3])
 	}
 	else
 		std::cout << "Error: Can't find programID" << std::endl;
+}
+
+void MyGLWindow::DetectCollision()
+{
+	bool anyCollision = false;
+	for (uint i = 0; i < 4; i++)
+	{
+		const vec2 first = vec2(Arena[i*6],Arena[i*6+1]);
+		const vec2 second = vec2(Arena[(i+1)%4*6], Arena[(i + 1)%4 * 6 + 1]);
+		vec2 wall = second - first;
+		vec2 normal = glm::normalize(vec2(-wall.y,wall.x));
+
+		float distance = glm::dot(normal,translate-first);
+		printf("distance%d: %f \n",i, distance);
+		//printf("normal %d: %f,%f \n",i, normal.x,normal.y);
+		if (distance < 0)
+		{
+			velocity = velocity - 2 * glm::dot(normal,velocity) * normal;
+		}
+	}
 }
 
 #pragma endregion GameLogic

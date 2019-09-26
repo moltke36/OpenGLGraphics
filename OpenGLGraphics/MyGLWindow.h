@@ -1,5 +1,7 @@
 #pragma once
 #include <QtOpenGL\qgl>
+#include <glm.hpp>
+
 
 class MyGLWindow : public QGLWidget
 {
@@ -15,7 +17,9 @@ protected:
 	void DrawStaic();
 public:
 	MyGLWindow();
-	void UpdateUniform(float TriTranslate[2], float randcolor[3]);
+	void UpdateUniform(glm::vec2 TriTranslate, float randcolor[3]);
+
+	void DetectCollision();
 	
 };
 
