@@ -1,6 +1,7 @@
 ﻿#include <GL\glew.h>
 #include <iostream>
 #include <Qt3DInput/qkeyevent.h>
+//#include <Qt3DInput/qmouseevent.h>
 #include <stdlib.h> 
 #include <fstream>
 #include <QtCore\qtimer.h>
@@ -10,31 +11,27 @@
 #include <Vertex.h>
 #include <ShapeGenerator.h>
 #include <stdio.h>
+#include <Camera.h>
 #include "MyGLWindow.h"
+
+#define M_PI 3.14159265359f
+
 using glm::vec3;
 using glm::mat4;
 
-
 const float Y_DELTA = 0.2f;
-const uint NUM_VERTICES_PER_TRI = 3;
-const uint NUM_FLOATS_PER_VERTICE = 6;
-const uint TRIANGLE_BYTE_SIZE = NUM_VERTICES_PER_TRI * NUM_FLOATS_PER_VERTICE * sizeof(float);
-const uint MAX_TRIS = 40;
 
-int numTris = 0;
-float translateLeft[2];
-float translateRight[2];
-float leftcolor[3];
-float rightcolor[3];
 bool endGame = false;
 GLuint programID;
 GLuint numIndices;
+
+Camera camera;
 
 MyGLWindow::MyGLWindow()
 {
 	QTimer *timer = new QTimer(this);
 	connect(timer, SIGNAL(timeout()), this, SLOT(update()));
-	timer->start(32);
+	timer->start(15);
 
 	setWindowTitle(tr("Move Triangles"));
 }
@@ -82,7 +79,7 @@ void MyGLWindow::sendDataToOpenGL()
 	// Bind to ELEMENT ARRAY BUFFER
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
 	// Pass data to ELEMENT ARRAY
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, shape.indexBufferSize(), shape.indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, shape.indexBufferSize(), shape.indices, GL_DYNAMIC_DRAW);
 	numIndices = shape.numIndices;
 	shape.cleanup();
 
@@ -90,15 +87,9 @@ void MyGLWindow::sendDataToOpenGL()
 	glGenBuffers(1, &tranformationMatrixBufferID);
 	glBindBuffer(GL_ARRAY_BUFFER, tranformationMatrixBufferID);
 
-	// Projection Matrix （笔记PMatrix 物体压扁）
-	mat4 projectionMatrix = glm::perspective(15.0f, ((float)width()) / height(), 0.1f, 10.0f);
 
-	mat4 fullTransforms[] =
-	{
-		projectionMatrix * glm::translate(vec3(-1.0f, 0.0f, -3.0f)) * glm::rotate(36.0f + translateLeft[0], vec3(1.0f, 0.0f, 0.0f)),
-		projectionMatrix * glm::translate(vec3(1.0f, 0.0f, -3.75f)) * glm::rotate(126.0f + translateLeft[0], vec3(0.0f, 1.0f, 0.0f))
-	};
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fullTransforms), fullTransforms, GL_STATIC_DRAW);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(mat4)*2, 0, GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 0));
 	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 4));
 	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 8));
@@ -201,11 +192,19 @@ void MyGLWindow::installShaders()
 
 void MyGLWindow::paintGL()
 {
+	// Projection Matrix （笔记PMatrix 物体压扁）
+	mat4 projectionMatrix = glm::perspective(60.0f* (M_PI/180.0f), ((GLfloat)width() / (GLfloat)height()), 0.1f, 150.0f);
+	mat4 fullTransforms[] =
+	{
+		projectionMatrix * camera.getWorldToViewMatrix() * glm::translate(vec3(-1.0f, 0.0f, -3.0f)) * glm::rotate(36.0f, vec3(1.0f, 0.0f, 0.0f)),
+		projectionMatrix * camera.getWorldToViewMatrix() * glm::translate(vec3(1.0f, 0.0f, -3.75f)) * glm::rotate(126.0f, vec3(0.0f, 1.0f, 0.0f))
+	};
+	glBufferData(GL_ARRAY_BUFFER, sizeof(fullTransforms), fullTransforms, GL_DYNAMIC_DRAW);
+
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-	Update(translateLeft,leftcolor);
+
+	Update();
 	Draw();
-	//Update(translateRight,rightcolor);
-	//Draw();
 }
 
 void MyGLWindow::Draw()
@@ -218,8 +217,19 @@ void MyGLWindow::Draw()
 	glDrawElementsInstanced(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, 0,2);
 }
 
+void MyGLWindow::mouseMoveEvent(QMouseEvent* e)
+{
+	if (e->buttons() == Qt::RightButton)
+	{
+		camera.mouseUpdate(vec2(e->x(), e->y()));
+	}
+}
+
 void MyGLWindow::initializeGL()
 {
+	// Enable Mouse Tracking
+	setMouseTracking(true);
+
 	// Init glew
 	glewInit();
 
@@ -241,83 +251,30 @@ void MyGLWindow::keyPressEvent(QKeyEvent *e)
 	switch (e->key())
 	{
 	case Qt::Key_W:
-		translateLeft[1] += +0.1f;
-		randomColor(leftcolor);
+		camera.moveForward(1.0);
 		break;
 	case Qt::Key_S:
-		translateLeft[1] += -0.1f;
-		randomColor(leftcolor);
+		camera.moveForward(-1.0);
 		break;
 	case Qt::Key_A:
-		translateLeft[0] += -0.1f;
-		randomColor(leftcolor);
+		camera.strafeLeft(1.0);
 		break;
 	case Qt::Key_D:
-		translateLeft[0] += +0.1f;
-		randomColor(leftcolor);
-		break;
-	case Qt::Key_Up:
-		translateRight[1] += +0.1f;
-		randomColor(rightcolor);
-		break;
-	case Qt::Key_Down:
-		translateRight[1] += -0.1f;
-		randomColor(rightcolor);
-		break;
-	case Qt::Key_Left:
-		translateRight[0] += -0.1f;
-		randomColor(rightcolor);
-		break;
-	case Qt::Key_Right:
-		translateRight[0] += +0.1f;
-		randomColor(rightcolor);
+		camera.strafeLeft(-1.0);
 		break;
 	case Qt::Key_Escape:
 		close();
 	}
 }
 
-void MyGLWindow::randomColor(float* Inputcolor)
-{
-	Inputcolor[0] = (double)rand() / (RAND_MAX);
-	Inputcolor[1] = (double)rand() / (RAND_MAX);
-	Inputcolor[2] = (double)rand() / (RAND_MAX);
-}
-
 void MyGLWindow::StartGame()
 {
-	translateLeft[0] = 0.0;
-	translateLeft[1] = 0.0;
-	translateRight[0] = 0.0;
-	translateRight[1] = 0.0;
 
-	leftcolor[0] = 1.0;
-	leftcolor[1] = 1.0;
-	leftcolor[2] = 1.0;
-
-	rightcolor[0] = 1.0;
-	rightcolor[1] = 1.0;
-	rightcolor[2] = 1.0;
 }
 
-void MyGLWindow::Update(float TriTranslate[2], float randcolor[3])
+void MyGLWindow::Update()
 {
-	if (programID)
-	{
-		GLint translate = glGetUniformLocation(programID, "translate");
-		if (translate != -1)
-		{
-			glUniform2fv(translate, 1, TriTranslate);
-		}
-		GLint randomCol = glGetUniformLocation(programID, "randomCol");
-		if (randomCol != -1)
-		{
-			float color[3] = { (float)rand() / (RAND_MAX),(float)rand() / (RAND_MAX),(float)rand() / (RAND_MAX)};
-			glUniform3fv(randomCol, 1, randcolor);
-		}
-	}
-	else
-		std::cout << "Error: Can't find programID" << std::endl;
+
 }
 
 #pragma endregion GameLogic

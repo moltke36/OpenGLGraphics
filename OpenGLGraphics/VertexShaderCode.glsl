@@ -5,7 +5,6 @@ in layout(location=1) vec3 vertexColor;
 in layout(location=2) mat4 fullTransformMatrix;
 
 out vec3 theColor;
-uniform vec3 randomCol;
 
 void main()
 {

@@ -3,7 +3,7 @@
 
 class MyGLWindow : public QGLWidget
 {
-protected:
+private:
 	
 	void sendDataToOpenGL();
 	bool checkStatus(GLuint objectID, PFNGLGETSHADERIVPROC objectPropertyGetter, PFNGLGETSHADERINFOLOGPROC getInfoLogFunc, GLenum statusType);
@@ -12,14 +12,17 @@ protected:
 	void initializeGL();
 	void StartGame();
 	void keyPressEvent(QKeyEvent * e);
-	void randomColor(float * color);
+
+protected:
 	void installShaders();
 	void paintGL();
 	void Draw();
+	void mouseMoveEvent(QMouseEvent*);
+
 public:
 	MyGLWindow();
 	~MyGLWindow();
-	void Update(float TriTranslate[2], float randcolor[3]);
+	void Update();
 	
 };
 
