@@ -4,6 +4,7 @@
 #include <QtCore/qelapsedtimer.h>
 #include <stdlib.h> 
 #include <fstream>
+#include <ctime>
 #include <gtx\perpendicular.hpp>
 #include <QtCore\qtimer.h>
 #include "MyGLWindow.h"
@@ -262,11 +263,10 @@ void MyGLWindow::StartGame()
 	translate = { 0.0,0.0 };
 
 	staticPos = vec2(0.0);
-
- 	velocity.x = ((float)rand() / (RAND_MAX) * 2 - 1);
-	velocity.y = ((float)rand() / (RAND_MAX) * 2 - 1);
+	srand(time(NULL));
+ 	velocity.x = (float)rand() / RAND_MAX * 2.0f - 1.0f;
+	velocity.y = ((float)rand() / RAND_MAX) * 2.0f - 1.0f;
 	glm::normalize(velocity);
-
 	printf("%f Veclocity: %f,%f \n", (float)(elapsedTimer.elapsed() - oldTime) / 1000.f,velocity[0], velocity[1]);
 	randomColor(color);
 	arenaColor[0] = 1.0;
@@ -305,7 +305,6 @@ void MyGLWindow::DetectCollision()
 		vec2 normal = glm::normalize(vec2(-wall.y,wall.x));
 
 		float distance = glm::dot(normal,translate-first);
-		printf("distance%d: %f \n",i, distance);
 		//printf("normal %d: %f,%f \n",i, normal.x,normal.y);
 		if (distance < 0)
 		{
