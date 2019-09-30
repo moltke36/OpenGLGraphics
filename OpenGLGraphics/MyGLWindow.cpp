@@ -23,9 +23,17 @@ const float Y_DELTA = 0.2f;
 
 bool endGame = false;
 GLuint programID;
-GLuint numIndices;
+GLuint theVertexBufferID;
+GLuint theIndexBufferID;
+
+GLuint cubeNumIndices;
+GLuint arrowNumIndices;
+GLuint cubeVertexArrayObjectID;
+GLuint arrowVertexArrayObjectID;
+GLuint arrowIndexDataByteOffset;
 
 Camera camera;
+GLuint fullTransformationUniformLocation;
 
 MyGLWindow::MyGLWindow()
 {
@@ -44,64 +52,77 @@ MyGLWindow::~MyGLWindow()
 
 #pragma region OpenGL
 
-
-
 void MyGLWindow::sendDataToOpenGL()
 {
-	ShapeData shape = ShapeGenerator::makeCube();
-
+	ShapeData cube = ShapeGenerator::makeCube();
+	ShapeData arrow = ShapeGenerator::makeArrow();
 	// Create a BufferID
-	GLuint vertexBufferID;
+
 	// Create a Buffer Object with myID
-	glGenBuffers(1, &vertexBufferID);
+	glGenBuffers(1, &theVertexBufferID);
 	// 必须要选一个Buffer类型绑定，ELEMENT_ARRAY OR ARRAY
 	//（或许可以理解成Buffer object连接上ARRAY）
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
+	glBindBuffer(GL_ARRAY_BUFFER, theVertexBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, shape.vertexBufferSize(), shape.vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, cube.vertexBufferSize() + arrow.vertexBufferSize(), 0, GL_STATIC_DRAW);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, cube.vertexBufferSize(), cube.vertices);
+	glBufferSubData(GL_ARRAY_BUFFER, cube.vertexBufferSize(), arrow.vertexBufferSize(), arrow.vertices);
 	glEnableVertexAttribArray(0);
-	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
 	// Enable Second Attribute of the vertex
 	glEnableVertexAttribArray(1);
-	// tell openGL how to interpret data
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (char*)(sizeof(float) * 3));
+	//// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
+	//// tell openGL how to interpret data
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (char*)(sizeof(float) * 3));
 
 
 	// ELEMENT ARRAY
 	// Define indices
 	//GLushort indices[] = { 0,1,2,3,4,5 };
-	// Create a index buffer ID
-	GLuint indexBufferID;
 	// Create a index buffer
-	glGenBuffers(1, &indexBufferID);
+	glGenBuffers(1, &theIndexBufferID);
 	// Bind to ELEMENT ARRAY BUFFER
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theIndexBufferID);
 	// Pass data to ELEMENT ARRAY
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, shape.indexBufferSize(), shape.indices, GL_DYNAMIC_DRAW);
-	numIndices = shape.numIndices;
-	shape.cleanup();
-
-	GLuint tranformationMatrixBufferID;
-	glGenBuffers(1, &tranformationMatrixBufferID);
-	glBindBuffer(GL_ARRAY_BUFFER, tranformationMatrixBufferID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube.indexBufferSize() + arrow.indexBufferSize(), 0, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, cube.indexBufferSize(), cube.indices);
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, cube.indexBufferSize(), arrow.indexBufferSize(), arrow.indices);
+	cubeNumIndices = cube.numIndices;
+	arrowNumIndices = arrow.numIndices;
 
 
+	glGenVertexArrays(1, &cubeVertexArrayObjectID);
+	glGenVertexArrays(1, &arrowVertexArrayObjectID);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(mat4)*2, 0, GL_STATIC_DRAW);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 0));
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 4));
-	glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 8));
-	glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(mat4), (void*)(sizeof(float) * 12));
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-	glEnableVertexAttribArray(4);
-	glEnableVertexAttribArray(5);
-	glVertexAttribDivisor(2, 1);
-	glVertexAttribDivisor(3, 1);
-	glVertexAttribDivisor(4, 1);
-	glVertexAttribDivisor(5, 1);
+	// Cube
+	glBindVertexArray(cubeVertexArrayObjectID);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, theVertexBufferID);
+	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
+	// tell openGL how to interpret data
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (char*)(sizeof(float) * 3));
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theIndexBufferID);
+
+	// Arrow Right here
+	glBindVertexArray(arrowVertexArrayObjectID);
+	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
+	glEnableVertexAttribArray(0);
+	// Enable Second Attribute of the vertex
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, theVertexBufferID);
+	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)cube.vertexBufferSize());
+	// tell openGL how to interpret data
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(cube.vertexBufferSize()+sizeof(float) * 3));
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theIndexBufferID);
+
+	arrowIndexDataByteOffset = cube.indexBufferSize();
+
+	cube.cleanup();
+	arrow.cleanup();
 }
 
 bool MyGLWindow::checkStatus(GLuint objectID, PFNGLGETSHADERIVPROC objectPropertyGetter, PFNGLGETSHADERINFOLOGPROC getInfoLogFunc, GLenum statusType)
@@ -192,16 +213,38 @@ void MyGLWindow::installShaders()
 
 void MyGLWindow::paintGL()
 {
-	// Projection Matrix （笔记PMatrix 物体压扁）
-	mat4 projectionMatrix = glm::perspective(60.0f* (M_PI/180.0f), ((GLfloat)width() / (GLfloat)height()), 0.1f, 150.0f);
-	mat4 fullTransforms[] =
-	{
-		projectionMatrix * camera.getWorldToViewMatrix() * glm::translate(vec3(-1.0f, 0.0f, -3.0f)) * glm::rotate(36.0f, vec3(1.0f, 0.0f, 0.0f)),
-		projectionMatrix * camera.getWorldToViewMatrix() * glm::translate(vec3(1.0f, 0.0f, -3.75f)) * glm::rotate(126.0f, vec3(0.0f, 1.0f, 0.0f))
-	};
-	glBufferData(GL_ARRAY_BUFFER, sizeof(fullTransforms), fullTransforms, GL_DYNAMIC_DRAW);
-
+	glViewport(0, 0, width(), height());
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	mat4 fullTransformMatrix;
+	// Projection Matrix （笔记PMatrix 物体压扁）
+	mat4 viewToProjectionMatrix = glm::perspective(60.0f* (M_PI / 180.0f), ((GLfloat)width() / (GLfloat)height()), 0.1f, 150.0f);
+	mat4 worldToViewMatrix = camera.getWorldToViewMatrix();
+	mat4 worldToProjectionMatrix = viewToProjectionMatrix * worldToViewMatrix;
+
+
+
+	glBindVertexArray(cubeVertexArrayObjectID);
+	mat4 cube1ModelToWorldMatrix =
+		glm::translate(vec3(-2.0f, 0.0f, -3.0f)) *
+		glm::rotate(36.0f, vec3(1.0f, 0.0f, 0.0f));
+	fullTransformMatrix = worldToProjectionMatrix * cube1ModelToWorldMatrix;
+	glUniformMatrix4fv(fullTransformationUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, cubeNumIndices, GL_UNSIGNED_SHORT, 0);
+
+	mat4 cube2ModelToWorldMatrix =
+		glm::translate(vec3(2.0f, 0.0f, -3.75f)) *
+		glm::rotate(126.0f, vec3(0.0f, 1.0f, 0.0f));
+	fullTransformMatrix = worldToProjectionMatrix * cube2ModelToWorldMatrix;
+	glUniformMatrix4fv(fullTransformationUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, cubeNumIndices, GL_UNSIGNED_SHORT, 0);
+
+	glBindVertexArray(arrowVertexArrayObjectID);
+	mat4 arrowModelToWorldMatrix =
+		glm::translate(vec3(0.0f, 0.0f, -3.00f)) *
+		glm::rotate(126.0f, vec3(0.0f, 1.0f, 0.0f));
+	fullTransformMatrix = worldToProjectionMatrix * arrowModelToWorldMatrix;
+	glUniformMatrix4fv(fullTransformationUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, arrowNumIndices, GL_UNSIGNED_SHORT, (void*)arrowIndexDataByteOffset);
 
 	Update();
 	Draw();
@@ -210,11 +253,8 @@ void MyGLWindow::paintGL()
 void MyGLWindow::Draw()
 {
 	// Set Viewport Width, Height
-	glViewport(0, 0, width(), height());
 
 
-	// Draw ELEMENT ARRAY
-	glDrawElementsInstanced(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, 0,2);
 }
 
 void MyGLWindow::mouseMoveEvent(QMouseEvent* e)
@@ -240,6 +280,8 @@ void MyGLWindow::initializeGL()
 	installShaders();
 
 	StartGame();
+
+	fullTransformationUniformLocation = glGetUniformLocation(programID, "fullTransformMatrix");
 }
 
 #pragma endregion RenderPart

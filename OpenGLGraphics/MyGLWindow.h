@@ -12,7 +12,6 @@ private:
 	void initializeGL();
 	void StartGame();
 	void keyPressEvent(QKeyEvent * e);
-
 protected:
 	void installShaders();
 	void paintGL();

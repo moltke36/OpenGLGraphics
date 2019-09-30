@@ -6,5 +6,7 @@ public:
 	static ShapeData makeCube();
 	
 	static ShapeData makeTriangle();
+
+	static ShapeData makeArrow();
 };
 
