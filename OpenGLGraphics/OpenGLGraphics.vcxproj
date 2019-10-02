@@ -167,6 +167,7 @@ xcopy $(ProjectDir)..\Middleware\glew\bin\Debug\Win32\glew32d.dll $(targetDir) /
     <ClInclude Include="MyGLWindow.h" />
     <ClInclude Include="ShapeData.h" />
     <ClInclude Include="ShapeGenerator.h" />
+    <ClInclude Include="TeapotData.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>

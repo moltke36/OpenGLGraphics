@@ -23,14 +23,17 @@ const float Y_DELTA = 0.2f;
 
 bool endGame = false;
 GLuint programID;
-GLuint theVertexBufferID;
-GLuint theIndexBufferID;
+
+GLuint theBufferID;
 
 GLuint cubeNumIndices;
 GLuint arrowNumIndices;
 GLuint cubeVertexArrayObjectID;
 GLuint arrowVertexArrayObjectID;
+
 GLuint arrowIndexDataByteOffset;
+GLuint cubeIndexDataByteOffset;
+
 
 Camera camera;
 GLuint fullTransformationUniformLocation;
@@ -46,6 +49,8 @@ MyGLWindow::MyGLWindow()
 
 MyGLWindow::~MyGLWindow()
 {
+	glDeleteBuffers(1, &theBufferID);
+
 	glUseProgram(0);
 	glDeleteProgram(programID);
 }
@@ -54,20 +59,31 @@ MyGLWindow::~MyGLWindow()
 
 void MyGLWindow::sendDataToOpenGL()
 {
-	ShapeData cube = ShapeGenerator::makeCube();
-	ShapeData arrow = ShapeGenerator::makeArrow();
+	ShapeData cube = ShapeGenerator::makeTeapot(10);
+	ShapeData arrow = ShapeGenerator::makePlane(10);
 	// Create a BufferID
 
 	// Create a Buffer Object with myID
-	glGenBuffers(1, &theVertexBufferID);
+	glGenBuffers(1, &theBufferID);
 	// 必须要选一个Buffer类型绑定，ELEMENT_ARRAY OR ARRAY
 	//（或许可以理解成Buffer object连接上ARRAY）
-	glBindBuffer(GL_ARRAY_BUFFER, theVertexBufferID);
+	glBindBuffer(GL_ARRAY_BUFFER, theBufferID);
 	// Send Data to Buffer(哪个buff，data大小，data, 送到哪里）
-	glBufferData(GL_ARRAY_BUFFER, cube.vertexBufferSize() + arrow.vertexBufferSize(), 0, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, cube.vertexBufferSize() + cube.indexBufferSize() +
+		arrow.vertexBufferSize() + arrow.indexBufferSize(), 0, GL_STATIC_DRAW);
 	// Enable Vertex Attribute (vertex有很多不同属性，位置是一个);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, cube.vertexBufferSize(), cube.vertices);
-	glBufferSubData(GL_ARRAY_BUFFER, cube.vertexBufferSize(), arrow.vertexBufferSize(), arrow.vertices);
+
+	GLsizeiptr currentOffset = 0;
+
+	glBufferSubData(GL_ARRAY_BUFFER, currentOffset, cube.vertexBufferSize(), cube.vertices);
+	currentOffset += cube.vertexBufferSize();
+	glBufferSubData(GL_ARRAY_BUFFER, currentOffset, cube.indexBufferSize(), cube.indices);
+	currentOffset += cube.indexBufferSize();
+	glBufferSubData(GL_ARRAY_BUFFER, currentOffset, arrow.vertexBufferSize(), arrow.vertices);
+	currentOffset += arrow.vertexBufferSize();
+	glBufferSubData(GL_ARRAY_BUFFER, currentOffset, arrow.indexBufferSize(), arrow.indices);
+	currentOffset += arrow.indexBufferSize();
+
 	glEnableVertexAttribArray(0);
 	// Enable Second Attribute of the vertex
 	glEnableVertexAttribArray(1);
@@ -76,18 +92,6 @@ void MyGLWindow::sendDataToOpenGL()
 	//// tell openGL how to interpret data
 	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (char*)(sizeof(float) * 3));
 
-
-	// ELEMENT ARRAY
-	// Define indices
-	//GLushort indices[] = { 0,1,2,3,4,5 };
-	// Create a index buffer
-	glGenBuffers(1, &theIndexBufferID);
-	// Bind to ELEMENT ARRAY BUFFER
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theIndexBufferID);
-	// Pass data to ELEMENT ARRAY
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, cube.indexBufferSize() + arrow.indexBufferSize(), 0, GL_DYNAMIC_DRAW);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, cube.indexBufferSize(), cube.indices);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, cube.indexBufferSize(), arrow.indexBufferSize(), arrow.indices);
 	cubeNumIndices = cube.numIndices;
 	arrowNumIndices = arrow.numIndices;
 
@@ -99,12 +103,12 @@ void MyGLWindow::sendDataToOpenGL()
 	glBindVertexArray(cubeVertexArrayObjectID);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, theVertexBufferID);
+	glBindBuffer(GL_ARRAY_BUFFER, theBufferID);
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, 0);
 	// tell openGL how to interpret data
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (char*)(sizeof(float) * 3));
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theIndexBufferID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theBufferID);
 
 	// Arrow Right here
 	glBindVertexArray(arrowVertexArrayObjectID);
@@ -112,14 +116,16 @@ void MyGLWindow::sendDataToOpenGL()
 	glEnableVertexAttribArray(0);
 	// Enable Second Attribute of the vertex
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, theVertexBufferID);
+	glBindBuffer(GL_ARRAY_BUFFER, theBufferID);
+	GLuint arrowByteOffset = cube.vertexBufferSize() + cube.indexBufferSize();
 	// 解释Vertex数据（位置，两个数据一个点，GLFloat类型，禁用Normalize，之后解释，之后解释）
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)cube.vertexBufferSize());
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)arrowByteOffset);
 	// tell openGL how to interpret data
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(cube.vertexBufferSize()+sizeof(float) * 3));
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theIndexBufferID);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 6, (void*)(arrowByteOffset +sizeof(float) * 3));
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, theBufferID);
 
-	arrowIndexDataByteOffset = cube.indexBufferSize();
+	cubeIndexDataByteOffset = cube.vertexBufferSize();
+	arrowIndexDataByteOffset = arrowByteOffset+arrow.vertexBufferSize();
 
 	cube.cleanup();
 	arrow.cleanup();
@@ -229,14 +235,14 @@ void MyGLWindow::paintGL()
 		glm::rotate(36.0f, vec3(1.0f, 0.0f, 0.0f));
 	fullTransformMatrix = worldToProjectionMatrix * cube1ModelToWorldMatrix;
 	glUniformMatrix4fv(fullTransformationUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
-	glDrawElements(GL_TRIANGLES, cubeNumIndices, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, cubeNumIndices, GL_UNSIGNED_SHORT, (void*)cubeIndexDataByteOffset);
 
 	mat4 cube2ModelToWorldMatrix =
 		glm::translate(vec3(2.0f, 0.0f, -3.75f)) *
 		glm::rotate(126.0f, vec3(0.0f, 1.0f, 0.0f));
 	fullTransformMatrix = worldToProjectionMatrix * cube2ModelToWorldMatrix;
 	glUniformMatrix4fv(fullTransformationUniformLocation, 1, GL_FALSE, &fullTransformMatrix[0][0]);
-	glDrawElements(GL_TRIANGLES, cubeNumIndices, GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, cubeNumIndices, GL_UNSIGNED_SHORT, (void*)cubeIndexDataByteOffset);
 
 	glBindVertexArray(arrowVertexArrayObjectID);
 	mat4 arrowModelToWorldMatrix =
@@ -274,6 +280,10 @@ void MyGLWindow::initializeGL()
 	glewInit();
 
 	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_CULL_FACE);
+
+	glCullFace(GL_BACK);
 
 	sendDataToOpenGL();
 
