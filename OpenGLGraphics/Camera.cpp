@@ -5,7 +5,9 @@ const float ROTATIONAL_SPEED = 0.0025f;
 const float MOVEMENT_SPEED = 0.1f;
 
 Camera::Camera() : 
-	viewDirection(0.0f, 0.0f, -1.0f), UP(0.0f,1.0f,0.0f)
+	viewDirection(-0.0672f,-0.636f,-0.768f), 
+	UP(0.0f,1.0f,0.0f),
+	position(0.201f,3.636f,4.530f)
 {
 
 }
