@@ -18,6 +18,7 @@
 
 using glm::vec3;
 using glm::mat4;
+using glm::vec4;
 
 const uint NUM_VERTICES_PER_TRI = 3;
 const uint NUM_FLOATS_PER_VERTICE = 9;
@@ -323,34 +324,40 @@ void MyGLWindow::paintGL()
 	mat4 worldToProjectionMatrix = viewToProjectionMatrix * worldToViewMatrix;
 
 	GLuint lightPositionWorldUniformLocation = glGetUniformLocation(programID, "lightPositionWorld");
-	vec3 lightPositionWorld(0.0f, 3.0f, 0.0f);
+	vec3 lightPositionWorld(0.0f, 5.0f, 0.0f);
 	glUniform3fv(lightPositionWorldUniformLocation, 1, &lightPositionWorld[0]);
-
+	GLuint eyePositionWorldUniformLocation = glGetUniformLocation(programID, "eyePositionWorld");
+	glm::vec3 eyePosition = camera.getPosition();
+	glUniform3fv(eyePositionWorldUniformLocation, 1, &eyePosition[0]);
 	GLuint ambientLightUniformLocation = glGetUniformLocation(programID, "ambientLight");
-	vec3 ambientLight(0.3f, 0.3f, 0.3f);
-	glUniform3fv(ambientLightUniformLocation, 1, &ambientLight[0]);
+	vec4 ambientLight(0.15f, 0.15f, 0.15f,1.0f);
+	glUniform4fv(ambientLightUniformLocation, 1, &ambientLight[0]);
+
+	GLuint modelToWorldMatrixUniformLocation = glGetUniformLocation(programID, "modelToWorldMatrix");
 
 	glBindVertexArray(teapotVertexArrayObjectID);
 	mat4 teapot1ModelToWorldMatrix =
-		glm::translate(vec3(-3.0f, 0.0f, -3.0f)) *
+		glm::translate(vec3(-3.0f, 0.0f, -8.0f)) *
 		glm::rotate(-90.0f* (M_PI / 180.0f), vec3(1.0f, 0.0f, 0.0f));
 	modelToProjectionMatrix = worldToProjectionMatrix * teapot1ModelToWorldMatrix;
 	glUniformMatrix4fv(modelToProjectionMatrixUniformLocation, 1, GL_FALSE, &modelToProjectionMatrix[0][0]);
-	//glDrawElements(GL_TRIANGLES, teapotNumIndices, GL_UNSIGNED_SHORT, (void*)teapotIndexDataByteOffset);
+	glUniformMatrix4fv(modelToWorldMatrixUniformLocation, 1, GL_FALSE, &teapot1ModelToWorldMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, teapotNumIndices, GL_UNSIGNED_SHORT, (void*)teapotIndexDataByteOffset);
 	//glBindVertexArray(teapotNormalsVertexArrayObjectID);
 	//glDrawElements(GL_LINES, teapotNormalNumIndices, GL_UNSIGNED_SHORT, (void*)teapotNormalsIndexDataByteOffset);
 	
 	glBindVertexArray(teapotVertexArrayObjectID);
 	mat4 teapot2ModelToWorldMatrix =
-		glm::translate(vec3(3.0f, 0.0f, -3.75f)) *
+		glm::translate(vec3(3.0f, 0.0f, 3.75f)) *
 		glm::rotate(-90.0f* (M_PI / 180.0f), vec3(1.0f, 0.0f, 0.0f));
 	modelToProjectionMatrix = worldToProjectionMatrix * teapot2ModelToWorldMatrix;
 	glUniformMatrix4fv(modelToProjectionMatrixUniformLocation, 1, GL_FALSE, &modelToProjectionMatrix[0][0]);
-	//glDrawElements(GL_TRIANGLES, teapotNumIndices, GL_UNSIGNED_SHORT, (void*)teapotIndexDataByteOffset);
+	glUniformMatrix4fv(modelToWorldMatrixUniformLocation, 1, GL_FALSE, &teapot2ModelToWorldMatrix[0][0]);
+	glDrawElements(GL_TRIANGLES, teapotNumIndices, GL_UNSIGNED_SHORT, (void*)teapotIndexDataByteOffset);
 	//glBindVertexArray(teapotNormalsVertexArrayObjectID);
 	//glDrawElements(GL_LINES, teapotNormalNumIndices, GL_UNSIGNED_SHORT, (void*)teapotNormalsIndexDataByteOffset);
 
-	GLuint modelToWorldMatrixUniformLocation = glGetUniformLocation(programID, "modelToWorldMatrix");
+	
 
 	glBindVertexArray(arrowVertexArrayObjectID);
 	mat4 arrowModelToWorldMatrix =

@@ -17,6 +17,7 @@ public:
 	Camera();
 	void mouseUpdate(const vec2& newMousePosition);
 	mat4 getWorldToViewMatrix() const;
+	const vec3 getPosition() { return position; }
 
 	void moveForward(float value);
 	void strafeLeft(float value);
