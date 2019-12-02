@@ -86,6 +86,8 @@ void MyGLWindow::sendDataToOpenGL()
 	ShapeData planeNormals = ShapeGenerator::generateNormals(plane);
 	// Create a BufferID
 
+	ShapeData mesh = ShapeGenerator::LoadMesh("mesh.obj");
+
 	// Create a Buffer Object with myID
 	glGenBuffers(1, &theBufferID);
 	// 必须要选一个Buffer类型绑定，ELE MENT_ARRAY OR ARRAY

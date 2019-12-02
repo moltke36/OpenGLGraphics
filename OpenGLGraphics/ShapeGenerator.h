@@ -41,5 +41,9 @@ public:
 	static ShapeData makeTeapot(uint tesselation = 10, const glm::mat4& lidTransform = glm::mat4());
 
 	static ShapeData generateNormals(const ShapeData& data);
+
+	static ShapeData LoadMesh(const char* fileName);
+	
+	static string getAttr(string line);
 };
 

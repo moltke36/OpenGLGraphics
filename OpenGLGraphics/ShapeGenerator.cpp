@@ -1,5 +1,10 @@
 #include "ShapeGenerator.h"
+#include <fstream>
+#include <iostream>
+#include <string>
 #include <Vertex.h>
+
+using namespace std;
 
 #define NUM_ARRAY_ELEMENTS(a) sizeof(a) / sizeof(*a)
 using glm::vec3;
@@ -638,4 +643,50 @@ ShapeData ShapeGenerator::generateNormals(const ShapeData& data)
 	for (int i = 0; i < ret.numIndices; i++)
 		ret.indices[i] = i;
 	return ret;
+}
+
+//std::string readLines(char* lines)
+//{
+//	int ch;
+//	while ((ch = getchar()) == '\n' || ch == ' ' || ch == '\t')
+//}
+
+ShapeData ShapeGenerator::LoadMesh(const char* fileName)
+{
+	ShapeData ret;
+	std::ifstream myInput(fileName);
+	if (!myInput.good())
+	{
+		std::cout << "File failed to load... " << fileName << std::endl;
+		system("pause");
+		exit(0);
+	}
+	else 
+	{
+		string line;
+		while (std::getline(myInput, line))
+		{
+			cout << getAttr(line) << endl;
+
+		}
+	}
+	return ShapeData();
+}
+
+string ShapeGenerator::getAttr(string line)
+{
+	string attr;
+
+	for (char& c : line)
+	{
+		if (c != ' ' && '\t' && c == ' ')
+		{
+				attr += c;
+		}	
+		else if (attr != "")
+		{
+			return attr;
+		}
+	}
+	return attr;
 }
